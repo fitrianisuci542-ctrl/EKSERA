@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Ekskul extends Model
+{
+    use HasFactory;
+
+    protected $table = 'ekskuls';
+
+    protected $fillable = [
+    'nama_ekskul',
+    'pembina',
+    'hari',
+    'jam_mulai',
+    'jam_selesai',
+    'lokasi',
+    'deskripsi',
+    'foto',
+];
+
+}
