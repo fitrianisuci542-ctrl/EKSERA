@@ -18,7 +18,6 @@ class AbsensiController extends Controller
         );
     }
 
-    // Halaman untuk mengisi absensi
     public function index()
     {
         $this->cekPembina();
@@ -41,7 +40,6 @@ class AbsensiController extends Controller
         ));
     }
 
-    // Menyimpan absensi
     public function store(Request $request)
     {
         $this->cekPembina();
@@ -54,21 +52,38 @@ class AbsensiController extends Controller
         ]);
 
         foreach ($validated['absensi'] as $pendaftaranId => $data) {
+
             $pendaftaran = Pendaftaran::where('id', $pendaftaranId)
                 ->where('status', 'diterima')
                 ->firstOrFail();
 
-            Absensi::updateOrCreate(
-                [
-                    'pendaftaran_id' => $pendaftaran->id,
-                    'tanggal' => $validated['tanggal'],
-                ],
-                [
-                    'pembina_id' => Auth::id(),
-                    'status' => $data['status'],
-                    'catatan' => $data['catatan'] ?? null,
-                ]
-            );
+            // Pengecekan duplikat sebelum menyimpan
+            $duplikat = Absensi::where(
+                'pendaftaran_id',
+                $pendaftaran->id
+            )
+                ->whereDate('tanggal', $validated['tanggal'])
+                ->exists();
+
+            if ($duplikat) {
+                return redirect()
+                    ->route('absensi.index', [
+                        'tanggal' => $validated['tanggal']
+                    ])
+                    ->with(
+                        'error',
+                        'Absensi siswa sudah tercatat pada tanggal tersebut.'
+                    );
+            }
+
+            // Simpan jika belum ada data dengan kombinasi yang sama
+            Absensi::create([
+                'pendaftaran_id' => $pendaftaran->id,
+                'pembina_id' => Auth::id(),
+                'tanggal' => $validated['tanggal'],
+                'status' => $data['status'],
+                'catatan' => $data['catatan'] ?? null,
+            ]);
         }
 
         return redirect()
@@ -76,33 +91,5 @@ class AbsensiController extends Controller
                 'tanggal' => $validated['tanggal']
             ])
             ->with('success', 'Absensi berhasil disimpan.');
-    }
-
-    // Halaman riwayat absensi
-    public function riwayat(Request $request)
-    {
-        $this->cekPembina();
-
-        $query = Absensi::with([
-            'pendaftaran.user',
-            'pendaftaran.ekskul',
-            'pembina'
-        ]);
-
-        if ($request->filled('tanggal')) {
-            $query->whereDate('tanggal', $request->tanggal);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $riwayat = $query
-            ->latest('tanggal')
-            ->latest('id')
-            ->paginate(15)
-            ->withQueryString();
-
-        return view('absensi.riwayat', compact('riwayat'));
     }
 }

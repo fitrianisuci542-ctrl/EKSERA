@@ -9,18 +9,14 @@ use Illuminate\Support\Facades\Auth;
 
 class PendaftaranController extends Controller
 {
-    // Memastikan hanya siswa yang dapat mengakses fitur pendaftaran
+    // Memastikan hanya siswa yang dapat menggunakan fitur pendaftaran
     private function cekSiswa()
     {
-        if (!Auth::check()) {
-            return redirect()->route('login');
-        }
-
-        if (Auth::user()->role !== 'siswa') {
-            abort(403, 'Fitur pendaftaran hanya dapat digunakan oleh siswa.');
-        }
-
-        return null;
+        abort_unless(
+            Auth::check() && Auth::user()->role === 'siswa',
+            403,
+            'Fitur pendaftaran hanya dapat digunakan oleh siswa.'
+        );
     }
 
     // Menampilkan daftar ekstrakurikuler
@@ -33,28 +29,29 @@ class PendaftaranController extends Controller
         return view('pendaftaran.index', compact('ekskuls'));
     }
 
-    // Menyimpan pendaftaran siswa
+    // Menyimpan pendaftaran ekstrakurikuler
     public function store(Request $request, Ekskul $ekskul)
     {
         $this->cekSiswa();
 
+        // Validasi catatan
         $validated = $request->validate([
-            'catatan' => 'nullable|string|max:1000',
+            'catatan' => 'nullable|string|max:500',
         ]);
 
-        // Cek apakah siswa sudah mendaftar
-        $sudahDaftar = Pendaftaran::where('user_id', Auth::id())
+        // VALIDASI ANTI-DUPLIKASI
+        // Memeriksa apakah siswa sudah mendaftar ekstrakurikuler yang sama
+        $duplikat = Pendaftaran::where('user_id', Auth::id())
             ->where('ekskul_id', $ekskul->id)
             ->exists();
 
-        if ($sudahDaftar) {
-            return back()->with(
-                'error',
-                'Kamu sudah terdaftar di ekstrakurikuler ini.'
-            );
+        if ($duplikat) {
+            return back()
+                ->withInput()
+                ->with('error', 'Kamu sudah terdaftar pada ekstrakurikuler ini!');
         }
 
-        // Simpan pendaftaran
+        // Menyimpan data pendaftaran jika belum terdaftar
         Pendaftaran::create([
             'user_id' => Auth::id(),
             'ekskul_id' => $ekskul->id,
@@ -62,13 +59,12 @@ class PendaftaranController extends Controller
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
-        return back()->with(
-            'success',
-            'Pendaftaran ekstrakurikuler berhasil dikirim!'
-        );
+        return redirect()
+            ->route('pendaftaran.saya')
+            ->with('success', 'Pendaftaran ekstrakurikuler berhasil dikirim!');
     }
 
-    // Menampilkan pendaftaran milik siswa
+    // Menampilkan pendaftaran milik siswa yang sedang login
     public function saya()
     {
         $this->cekSiswa();
@@ -81,18 +77,21 @@ class PendaftaranController extends Controller
         return view('pendaftaran.saya', compact('pendaftarans'));
     }
 
-    // Membatalkan pendaftaran
+    // Menghapus pendaftaran milik siswa sendiri
     public function destroy(Pendaftaran $pendaftaran)
     {
         $this->cekSiswa();
 
-        if ($pendaftaran->user_id != Auth::id()) {
-            abort(403, 'Kamu tidak memiliki akses.');
-        }
+        abort_unless(
+            $pendaftaran->user_id == Auth::id(),
+            403,
+            'Kamu tidak dapat menghapus pendaftaran milik siswa lain.'
+        );
 
         $pendaftaran->delete();
 
-        return redirect()->route('pendaftaran.saya')
+        return redirect()
+            ->route('pendaftaran.saya')
             ->with('success', 'Pendaftaran berhasil dibatalkan.');
     }
 }
