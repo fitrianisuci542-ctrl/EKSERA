@@ -1,0 +1,37 @@
+.git
+.github
+.gitignore
+
+# Jangan pernah masukkan file environment lokal ke image
+.env
+.env.*
+!.env.example
+
+node_modules
+vendor
+
+# Hasil build lokal, dibangun ulang di dalam image
+public/build
+public/hot
+public/storage
+
+# File runtime
+storage/app/public
+storage/framework/cache
+storage/framework/sessions
+storage/framework/views
+storage/logs
+bootstrap/cache/*.php
+database/*.sqlite
+
+# Berkas pengembangan
+.phpunit.cache
+.phpunit.result.cache
+.phpactor.json
+/auth.json
+tests
+Dockerfile
+.dockerignore
+render.yaml
+DEPLOY.md
+README.md

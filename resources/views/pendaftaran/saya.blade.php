@@ -391,7 +391,7 @@
                     @if($pendaftaran->ekskul->foto)
                         <div class="photo-wrapper">
                             <img
-                                src="{{ asset('storage/' . $pendaftaran->ekskul->foto) }}"
+                                src="{{ Storage::disk('public')->url($pendaftaran->ekskul->foto) }}"
                                 alt="{{ $pendaftaran->ekskul->nama_ekskul }}"
                                 class="ekskul-photo"
                             >

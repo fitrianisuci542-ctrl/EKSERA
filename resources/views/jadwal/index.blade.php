@@ -401,7 +401,7 @@
         <div class="user-info">
             @if($user && $user->foto_profil)
                 <img
-                    src="{{ asset('storage/' . $user->foto_profil) }}"
+                    src="{{ Storage::disk('public')->url($user->foto_profil) }}"
                     class="user-photo"
                     alt="Foto profil">
             @else
@@ -449,7 +449,7 @@
                 <div class="photo-wrapper">
                     @if($jadwal->foto)
                         <img
-                            src="{{ asset('storage/' . $jadwal->foto) }}"
+                            src="{{ Storage::disk('public')->url($jadwal->foto) }}"
                             alt="{{ $jadwal->nama_ekskul }}"
                             class="ekskul-photo">
                     @else

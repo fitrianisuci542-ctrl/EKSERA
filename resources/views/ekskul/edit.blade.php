@@ -287,7 +287,7 @@
                         <label>Foto Kegiatan Seni</label>
 
                         @if ($ekskul->foto)
-                            <img src="{{ asset('storage/' . $ekskul->foto) }}"
+                            <img src="{{ Storage::disk('public')->url($ekskul->foto) }}"
                                  alt="Foto {{ $ekskul->nama_ekskul }}"
                                  class="photo-preview">
 

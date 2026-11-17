@@ -348,7 +348,7 @@
                 @if($ekskul->foto)
 
                     <img
-                        src="{{ asset('storage/' . $ekskul->foto) }}"
+                        src="{{ Storage::disk('public')->url($ekskul->foto) }}"
                         alt="{{ $ekskul->nama_ekskul }}"
                         class="ekskul-photo"
                     >

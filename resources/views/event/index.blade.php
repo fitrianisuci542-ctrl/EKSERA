@@ -100,7 +100,7 @@
         <div class="event">
 
             @if($event->foto)
-                <img src="{{ asset('storage/'.$event->foto) }}" alt="Foto Event">
+                <img src="{{ Storage::disk('public')->url($event->foto) }}" alt="Foto Event">
             @endif
 
             <h2>{{ $event->nama_event }}</h2>

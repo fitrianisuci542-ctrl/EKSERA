@@ -562,7 +562,7 @@
 
                     @if($item->foto)
                         <img
-                            src="{{ asset('storage/'.$item->foto) }}"
+                            src="{{ Storage::disk('public')->url($item->foto) }}"
                             alt="Foto {{ $item->nama_ekskul }}"
                         >
                     @else

@@ -317,7 +317,7 @@
         <div class="user-info">
             @if($user->foto_profil)
                 <img class="small-photo"
-                     src="{{ asset('storage/' . $user->foto_profil) }}"
+                     src="{{ Storage::disk('public')->url($user->foto_profil) }}"
                      alt="Foto profil">
             @else
                 <div class="photo-placeholder" style="width:35px;height:35px;font-size:17px;">
@@ -351,7 +351,7 @@
         <div class="profile-header">
             @if($user->foto_profil)
                 <img
-                    src="{{ asset('storage/' . $user->foto_profil) }}"
+                    src="{{ Storage::disk('public')->url($user->foto_profil) }}"
                     class="profile-photo"
                     alt="Foto profil siswa">
             @else

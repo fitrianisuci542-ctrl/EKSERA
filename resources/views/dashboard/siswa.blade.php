@@ -440,7 +440,7 @@
         <div class="user-info">
             @if($user->foto_profil)
                 <img
-                    src="{{ asset('storage/' . $user->foto_profil) }}"
+                    src="{{ Storage::disk('public')->url($user->foto_profil) }}"
                     class="user-photo"
                     alt="Foto profil">
             @else
