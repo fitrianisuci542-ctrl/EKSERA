@@ -15,12 +15,18 @@ public/build
 public/hot
 public/storage
 
-# File runtime
-storage/app/public
-storage/framework/cache
-storage/framework/sessions
-storage/framework/views
-storage/logs
+# File runtime: buang isinya, tapi pertahankan folder + .gitignore
+# agar Laravel bisa menemukan storage/framework/views saat view:cache.
+storage/app/public/*
+!storage/app/public/.gitignore
+storage/framework/cache/data/*
+!storage/framework/cache/data/.gitignore
+storage/framework/sessions/*
+!storage/framework/sessions/.gitignore
+storage/framework/views/*
+!storage/framework/views/.gitignore
+storage/logs/*
+!storage/logs/.gitignore
 bootstrap/cache/*.php
 database/*.sqlite
 
