@@ -9,8 +9,9 @@ sed -ri "s/^Listen .*/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT}>/" \
     /etc/apache2/sites-available/000-default.conf
 
-# Cache konfigurasi & view (route:cache TIDAK dipakai karena ada closure route)
+# Cache konfigurasi, route, dan view. Semua route harus bebas closure.
 php artisan config:cache
+php artisan route:cache
 php artisan view:cache
 
 # Migrasi otomatis saat container start (Render Free tidak punya pre-deploy/shell)

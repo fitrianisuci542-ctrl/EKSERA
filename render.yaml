@@ -5,7 +5,7 @@ services:
     plan: free
     region: singapore
     branch: main
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./Dockerfile.render
     dockerContext: .
     healthCheckPath: /up
     autoDeploy: true

@@ -14,9 +14,7 @@ use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\ProfilSiswaController;
 
 // HALAMAN UTAMA EKSERA
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::redirect('/', '/login');
 
 // LOGIN
 Route::get('/login', [AuthController::class, 'showLogin'])
@@ -110,15 +108,5 @@ Route::middleware('auth')->group(function () {
 
     Route::put('/profil-saya', [ProfilSiswaController::class, 'update'])
         ->name('profil.siswa.update');
-
-        // TEST HALAMAN ERROR EKSERA
-
-        Route::get('/test-error-400', function () {
-    abort(400);
-});
-
-    Route::get('/test-error-500', function () {
-    abort(500);
-});
 
 });

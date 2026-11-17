@@ -30,7 +30,7 @@ database/*.sqlite
 .phpactor.json
 /auth.json
 tests
-Dockerfile
+Dockerfile*
 .dockerignore
 render.yaml
 DEPLOY.md

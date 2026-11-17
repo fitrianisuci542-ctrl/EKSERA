@@ -11,7 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Render menerminasi HTTPS di proxy, jadi percayai header X-Forwarded-*.
+        // Hosting (Render/EthioDeploy) menerminasi HTTPS di proxy, jadi
+        // percayai header X-Forwarded-* agar URL yang dibuat tetap https.
         $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {

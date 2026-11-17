@@ -1,26 +1,32 @@
-# Deploy EKSERA ke Render
+# Deploy EKSERA
 
-Aplikasi berjalan sebagai **Docker Web Service** di Render, database memakai
-**Supabase PostgreSQL**, dan upload foto disimpan di **Supabase Storage**
-(karena filesystem Render Free bersifat sementara).
+Aplikasi Laravel ini memakai:
+
+- **EthioDeploy Free** sebagai hosting utama (native Laravel: nginx + PHP-FPM).
+- **Supabase PostgreSQL** sebagai database.
+- **Supabase Storage** (S3-compatible) untuk foto upload, karena filesystem
+  container bersifat sementara.
 
 ```
-Browser  ->  Render (Docker: PHP 8.4 + Apache)  ->  Supabase PostgreSQL
-                                             \->  Supabase Storage (foto)
+Browser  ->  EthioDeploy (nginx + PHP-FPM)  ->  Supabase PostgreSQL
+                                          \->  Supabase Storage (foto)
 ```
 
-## Yang sudah disiapkan di repo
+Render masih bisa dipakai sebagai alternatif. Dockerfile untuk Render ada di
+`Dockerfile.render` (bukan `Dockerfile` di root) supaya EthioDeploy mendeteksi
+Laravel secara native.
+
+## File pendukung
 
 | File | Fungsi |
 |---|---|
-| `Dockerfile` | Build asset Vite + install Composer + PHP/Apache |
-| `.dockerignore` | Mencegah `.env`, `vendor`, `node_modules` masuk image |
-| `docker/entrypoint.sh` | Set port Render, cache config/view, jalankan migrasi |
+| `Dockerfile.render` | Image Render: Vite + Composer + PHP 8.4/Apache |
+| `docker/entrypoint.sh` | Set port, cache config/route/view, migrasi, start Apache |
 | `docker/php.ini` | Batas upload 8 MB, OPcache, log ke stderr |
 | `docker/apache.conf` | DocumentRoot ke `public/`, izinkan `.htaccess` |
 | `render.yaml` | Blueprint Render (region Singapore, plan Free) |
 | `config/filesystems.php` | Disk `public` bisa lokal atau Supabase Storage |
-| `bootstrap/app.php` | `trustProxies` agar HTTPS di belakang proxy Render benar |
+| `bootstrap/app.php` | `trustProxies` agar HTTPS di belakang proxy benar |
 
 ---
 
@@ -30,79 +36,144 @@ Browser  ->  Render (Docker: PHP 8.4 + Apache)  ->  Supabase PostgreSQL
 2. Klik **New bucket**, isi:
    - Name: `eksera`
    - Public bucket: **aktif**
-3. Buka **Storage -> Settings -> S3 access keys** (atau **Project Settings -> Storage**).
-4. Catat tiga nilai berikut:
-   - **Endpoint** (contoh `https://<ref>.supabase.co/storage/v1/s3`)
-   - **Region** (untuk proyek ini biasanya `ap-northeast-1`)
-   - **Access key ID** dan **Secret access key** (secret hanya tampil sekali)
+3. Buka **Storage -> S3 Access Keys** (atau **Project Settings -> Storage**).
+4. Buat access key baru dan catat:
+   - **Access key ID**
+   - **Secret access key** (hanya tampil sekali)
+5. Nilai koneksi untuk proyek ini:
+   - Endpoint: `https://rhuxirysaknhtpdnjhnh.supabase.co/storage/v1/s3`
+   - Region: `ap-northeast-1`
+   - Public URL: `https://rhuxirysaknhtpdnjhnh.supabase.co/storage/v1/object/public/eksera`
+   - Path-style endpoint: `true`
 
 > Bucket harus public karena Supabase S3 tidak mendukung header ACL.
 
-## Langkah 2 - Deploy ke Render
+## Langkah 2 - Deploy ke EthioDeploy
 
-### Cara A - Blueprint (paling cepat)
+### 2.1 Buat akun dan hubungkan repo
 
-1. Buka <https://dashboard.render.com/blueprints> -> **New Blueprint Instance**.
-2. Pilih repo `fitrianisuci542-ctrl/EKSERA`, branch `main`.
-3. Render membaca `render.yaml`. Isi variabel yang diminta (`sync: false`):
-   - `APP_KEY`
-   - `DB_PASSWORD`
-   - `AWS_ACCESS_KEY_ID`
-   - `AWS_SECRET_ACCESS_KEY`
-4. Klik **Apply** dan tunggu build selesai.
-5. Setelah service jadi, salin URL-nya (mis. `https://eksera-xxxx.onrender.com`),
-   tambahkan environment variable `APP_URL` dengan nilai tersebut, lalu
-   **Manual Deploy -> Deploy latest commit**.
+1. Login ke <https://ethiodeploy.com> dengan GitHub.
+2. Install **EthioDeploy GitHub App** pada repo
+   `fitrianisuci542-ctrl/EKSERA` (butuh akses admin ke repo).
+3. Buat **API token** di **Settings -> API tokens**, atau jalankan:
 
-### Cara B - Manual Web Service
+   ```bash
+   npx -y ethiodeploy login
+   ```
 
-1. **New -> Web Service**, hubungkan repo EKSERA.
-2. Isi:
-   - **Language:** `Docker`
-   - **Region:** `Singapore`
-   - **Branch:** `main`
-   - **Plan:** `Free`
-   - **Health Check Path:** `/up`
-3. Salin semua environment variable dari `render.yaml` ke tab **Environment**.
-4. Deploy.
+### 2.2 Buat project
 
-### Nilai environment penting
+Dari root repo:
+
+```bash
+npx -y ethiodeploy new --no-deploy \
+  --start "php artisan migrate --force && ethiodeploy-start"
+```
+
+Jika project untuk repo ini sudah ada, gunakan `ethiodeploy init` atau
+`ethiodeploy projects` untuk melihatnya.
+
+Catat URL project, misalnya `https://eksera-app.ethiodeploy.app`.
+
+### 2.3 Set environment variables
+
+Semua nilai berikut diisi di **Settings -> Environment** (atau lewat
+`ethiodeploy env set`). Jangan commit nilai secret ke repo.
 
 | Key | Value |
 |---|---|
-| `APP_KEY` | `base64:...` dari `.env` lokal (`php artisan key:generate --show`) |
-| `APP_URL` | `https://<nama-service>.onrender.com` (isi setelah service dibuat) |
-| `DB_PASSWORD` | password Supabase (jangan di-commit) |
-| `AWS_ACCESS_KEY_ID` | Access key dari Supabase Storage |
-| `AWS_SECRET_ACCESS_KEY` | Secret key dari Supabase Storage |
-| `AWS_ENDPOINT` | endpoint S3 dari dashboard Supabase |
-| `AWS_URL` | `https://<ref>.supabase.co/storage/v1/object/public/eksera` |
+| `APP_NAME` | `EKSERA` |
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_KEY` | `base64:...` dari `.env` lokal (pakai key yang sama) |
+| `APP_URL` | `https://<project>.ethiodeploy.app` |
+| `APP_LOCALE` | `id` |
+| `APP_FALLBACK_LOCALE` | `en` |
+| `APP_FAKER_LOCALE` | `id_ID` |
+| `LOG_CHANNEL` | `stderr` |
+| `LOG_LEVEL` | `info` |
+| `DB_CONNECTION` | `pgsql` |
+| `DB_HOST` | `aws-1-ap-northeast-1.pooler.supabase.com` |
+| `DB_PORT` | `5432` |
+| `DB_DATABASE` | `postgres` |
+| `DB_USERNAME` | `postgres.rhuxirysaknhtpdnjhnh` |
+| `DB_PASSWORD` | password Supabase (secret) |
+| `DB_SSLMODE` | `require` |
+| `SESSION_DRIVER` | `database` |
+| `SESSION_SECURE_COOKIE` | `true` |
+| `CACHE_STORE` | `database` |
+| `QUEUE_CONNECTION` | `sync` |
+| `MAIL_MAILER` | `log` |
+| `FILESYSTEM_PUBLIC_DRIVER` | `s3` |
+| `AWS_ACCESS_KEY_ID` | access key Supabase (secret) |
+| `AWS_SECRET_ACCESS_KEY` | secret key Supabase (secret) |
+| `AWS_DEFAULT_REGION` | `ap-northeast-1` |
+| `AWS_BUCKET` | `eksera` |
+| `AWS_ENDPOINT` | `https://rhuxirysaknhtpdnjhnh.supabase.co/storage/v1/s3` |
+| `AWS_URL` | `https://rhuxirysaknhtpdnjhnh.supabase.co/storage/v1/object/public/eksera` |
+| `AWS_USE_PATH_STYLE_ENDPOINT` | `true` |
 
-## Langkah 3 - Verifikasi
+Tandai `APP_KEY`, `DB_PASSWORD`, `AWS_ACCESS_KEY_ID`, dan
+`AWS_SECRET_ACCESS_KEY` sebagai **sensitive/runtime-only** jika opsi itu
+tersedia. Perubahan env baru berlaku setelah redeploy.
 
-1. Buka `https://<service>.onrender.com/up` -> harus `200 OK`.
-2. Login:
-   - Admin: `admin@eksera.test` / `admin12345`
-   - Pembina: `pembina@eksera.test` / `pembina12345`
-3. Tambah/edit ekskul dengan foto, lalu cek file muncul di bucket `eksera`.
-4. Restart service dari dashboard Render, pastikan foto tetap ada.
+### 2.4 Deploy
+
+```bash
+npx -y ethiodeploy deploy
+npx -y ethiodeploy logs -f
+```
+
+Build akan menjalankan `composer install --no-dev`, `npm run build`, lalu start
+command di atas. Health check default `/` menerima status 302; `/up` juga bisa
+dipakai sebagai health check path.
 
 ---
 
-## Catatan Render Free
+## Langkah 3 - Verifikasi
 
-- Service tidur setelah 15 menit tanpa trafik; request pertama bisa lambat ~1 menit.
-- Tidak ada Shell / pre-deploy command -> migrasi dijalankan oleh `docker/entrypoint.sh`.
-- Build ulang otomatis setiap push ke `main`.
+1. Buka `https://<project>.ethiodeploy.app/up` -> harus `200 OK`.
+2. Buka `/login` dan login:
+   - Admin: `admin@eksera.test` / `admin12345`
+   - Pembina: `pembina@eksera.test` / `pembina12345`
+   - Siswa: `test@example.com` / `password`
+3. Upload foto (misalnya lewat edit ekskul atau profil), lalu pastikan URL foto
+   mengarah ke `https://rhuxirysaknhtpdnjhnh.supabase.co/storage/v1/object/public/eksera/...`.
+4. Redeploy atau tunggu app tidur lalu bangunkan; foto harus tetap tampil.
+5. Cek logs untuk error 500/DB.
+
+---
+
+## Alternatif: Render
+
+Render memakai `Dockerfile.render` lewat `render.yaml`:
+
+```yaml
+dockerfilePath: ./Dockerfile.render
+```
+
+Langkahnya sama seperti sebelumnya: buat Blueprint dari `render.yaml`, isi
+`APP_KEY`, `DB_PASSWORD`, `AWS_ACCESS_KEY_ID`, dan `AWS_SECRET_ACCESS_KEY`,
+lalu set `APP_URL` setelah service dibuat.
+
+## Catatan Free Plan
+
+- EthioDeploy Free: app tidur setelah 30 menit tanpa trafik; request pertama
+  bisa menunggu sampai ~30 detik.
+- RAM 256 MB / 0.5 CPU; native nginx + PHP-FPM lebih ringan daripada Apache.
+- Render Free: tidur setelah 15 menit; request pertama bisa ~1 menit.
 - Supabase Free bisa pause setelah 7 hari tanpa aktivitas database.
+- Migrasi dijalankan otomatis saat start (`migrate --force`), aman dan
+  idempotent. Jangan jalankan `migrate:fresh` di production.
 
 ## Troubleshooting
 
 | Gejala | Penyebab / solusi |
 |---|---|
-| Build gagal di `composer install` | Cek log; biasanya ekstensi PHP kurang di `Dockerfile` |
-| 500 setelah deploy | Cek **Logs**; pastikan `APP_KEY` terisi dan `DB_*` benar |
-| Foto tidak muncul | Cek `AWS_URL`, bucket harus public, dan `FILESYSTEM_PUBLIC_DRIVER=s3` |
+| Build gagal di `composer install` | Cek log; biasanya ekstensi PHP kurang |
+| 500 setelah deploy | Cek logs; pastikan `APP_KEY` terisi dan `DB_*` benar |
+| `route:cache` gagal | Ada route closure baru; ubah ke controller/redirect |
+| Foto tidak muncul | Cek `AWS_URL`, bucket harus public, `FILESYSTEM_PUBLIC_DRIVER=s3` |
 | Upload gagal `AccessDenied` | Access key salah atau bucket bukan `eksera` |
-| Session hilang saat pindah halaman | `SESSION_SECURE_COOKIE=true` hanya untuk HTTPS; pastikan `APP_URL` https |
-| Error `route:cache` | Jangan jalankan `route:cache`/`optimize` (ada closure route) |
+| Session hilang | `SESSION_SECURE_COOKIE=true` hanya untuk HTTPS; pastikan `APP_URL` https |
+| Redirect ke `http://` | Pastikan `trustProxies` aktif dan `APP_URL` memakai https |
