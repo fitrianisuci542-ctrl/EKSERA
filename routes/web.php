@@ -13,9 +13,9 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\JadwalController;
 use App\Http\Controllers\ProfilSiswaController;
 
-// HALAMAN UTAMA
+// HALAMAN UTAMA EKSERA
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('login');
 });
 
 // LOGIN
@@ -112,7 +112,8 @@ Route::middleware('auth')->group(function () {
         ->name('profil.siswa.update');
 
         // TEST HALAMAN ERROR EKSERA
-    Route::get('/test-error-400', function () {
+
+        Route::get('/test-error-400', function () {
     abort(400);
 });
 
