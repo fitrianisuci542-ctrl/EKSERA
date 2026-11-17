@@ -18,8 +18,6 @@ services:
         value: "false"
       - key: APP_KEY
         sync: false
-      - key: APP_URL
-        sync: false
       - key: APP_LOCALE
         value: id
       - key: APP_FALLBACK_LOCALE

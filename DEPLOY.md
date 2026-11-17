@@ -46,11 +46,13 @@ Browser  ->  Render (Docker: PHP 8.4 + Apache)  ->  Supabase PostgreSQL
 2. Pilih repo `fitrianisuci542-ctrl/EKSERA`, branch `main`.
 3. Render membaca `render.yaml`. Isi variabel yang diminta (`sync: false`):
    - `APP_KEY`
-   - `APP_URL`
    - `DB_PASSWORD`
    - `AWS_ACCESS_KEY_ID`
    - `AWS_SECRET_ACCESS_KEY`
 4. Klik **Apply** dan tunggu build selesai.
+5. Setelah service jadi, salin URL-nya (mis. `https://eksera-xxxx.onrender.com`),
+   tambahkan environment variable `APP_URL` dengan nilai tersebut, lalu
+   **Manual Deploy -> Deploy latest commit**.
 
 ### Cara B - Manual Web Service
 
@@ -69,7 +71,7 @@ Browser  ->  Render (Docker: PHP 8.4 + Apache)  ->  Supabase PostgreSQL
 | Key | Value |
 |---|---|
 | `APP_KEY` | `base64:...` dari `.env` lokal (`php artisan key:generate --show`) |
-| `APP_URL` | `https://<nama-service>.onrender.com` |
+| `APP_URL` | `https://<nama-service>.onrender.com` (isi setelah service dibuat) |
 | `DB_PASSWORD` | password Supabase (jangan di-commit) |
 | `AWS_ACCESS_KEY_ID` | Access key dari Supabase Storage |
 | `AWS_SECRET_ACCESS_KEY` | Secret key dari Supabase Storage |
