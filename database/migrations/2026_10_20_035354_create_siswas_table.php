@@ -12,12 +12,14 @@ return new class extends Migration
         if (!Schema::hasTable('siswas')) {
             Schema::create('siswas', function (Blueprint $table) {
                 $table->id();
-                $table->string('nis')->nullable();
+                $table->string('nis', 30)->unique();
                 $table->string('nama');
-                $table->string('kelas')->nullable();
-                $table->string('jenis_kelamin')->nullable();
+                $table->string('kelas', 50)->nullable();
+                $table->string('jurusan', 100)->nullable();
+                $table->string('jenis_kelamin', 20)->nullable();
                 $table->string('email')->nullable();
-                $table->string('no_hp')->nullable();
+                $table->string('no_hp', 20)->nullable();
+                $table->text('alamat')->nullable();
                 $table->timestamps();
             });
         }

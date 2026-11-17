@@ -92,4 +92,63 @@ class AbsensiController extends Controller
             ])
             ->with('success', 'Absensi berhasil disimpan.');
     }
+
+    // Halaman rekapitulasi absensi
+    public function dashboard()
+    {
+        $this->cekPembina();
+
+        $tanggal = request('tanggal', now()->toDateString());
+
+        $pendaftarans = Pendaftaran::where('status', 'diterima')->get();
+        $absensis = Absensi::whereDate('tanggal', $tanggal)
+            ->whereIn('pendaftaran_id', $pendaftarans->pluck('id'))
+            ->get();
+
+        $totalPeserta = $pendaftarans->count();
+        $hadir = $absensis->where('status', 'hadir')->count();
+        $izin = $absensis->where('status', 'izin')->count();
+        $sakit = $absensis->where('status', 'sakit')->count();
+        $alpa = $absensis->where('status', 'alpa')->count();
+        $belumAbsen = $pendaftarans->count()
+            - $absensis->pluck('pendaftaran_id')->unique()->count();
+
+        return view('absensi.dashboard', compact(
+            'tanggal',
+            'totalPeserta',
+            'hadir',
+            'izin',
+            'sakit',
+            'alpa',
+            'belumAbsen'
+        ));
+    }
+
+    // Halaman riwayat absensi
+    public function riwayat(Request $request)
+    {
+        $this->cekPembina();
+
+        $query = Absensi::with([
+            'pendaftaran.user',
+            'pendaftaran.ekskul',
+            'pembina'
+        ]);
+
+        if ($request->filled('tanggal')) {
+            $query->whereDate('tanggal', $request->tanggal);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $riwayat = $query
+            ->latest('tanggal')
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('absensi.riwayat', compact('riwayat'));
+    }
 }

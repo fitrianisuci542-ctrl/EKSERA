@@ -8,6 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (!Schema::hasTable('pembinas')) {
+            Schema::create('pembinas', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')
+                    ->nullable()
+                    ->unique()
+                    ->constrained('users')
+                    ->nullOnDelete();
+                $table->string('nama')->nullable();
+                $table->string('email')->nullable()->unique();
+                $table->string('no_hp', 20)->nullable();
+                $table->string('bidang')->nullable();
+                $table->text('alamat')->nullable();
+                $table->timestamps();
+            });
+
+            return;
+        }
+
         Schema::table('pembinas', function (Blueprint $table) {
             if (!Schema::hasColumn('pembinas', 'nama')) {
                 $table->string('nama')->nullable();

@@ -8,16 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('absensis', function (Blueprint $table) {
-            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpa'])
-                  ->nullable();
-        });
+        if (!Schema::hasColumn('absensis', 'status')) {
+            Schema::table('absensis', function (Blueprint $table) {
+                $table->enum('status', ['hadir', 'izin', 'sakit', 'alpa'])
+                      ->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('absensis', function (Blueprint $table) {
-            $table->dropColumn('status');
-        });
+        if (Schema::hasColumn('absensis', 'status')) {
+            Schema::table('absensis', function (Blueprint $table) {
+                $table->dropColumn('status');
+            });
+        }
     }
 };
